@@ -1,94 +1,75 @@
 # Backup Script with Version Control
 
-This Bash script synchronizes files from a source directory to a destination directory using `rsync`, while keeping older versions of modified files. It appends a timestamp to old versions and stores them in a separate `older_versions` directory. After that, the script renames the older files by appending a 6-character MD5 hash for uniqueness, ensuring no file name conflicts.
+`sbackup.sh` is a simple and efficient bash script for backing up directories using `rsync`. It ensures that older versions of files are preserved by appending a timestamp and a unique identifier to each file. The script supports both local and remote backups.
 
 ## Features
+- **Backup with versioning**: Moves older versions of files to a designated folder (`older_versions`), appending a date and a unique 8-character UUID to ensure each version is unique.
+- **Efficient synchronization**: Uses `rsync` to efficiently sync files between directories, only copying changes and preserving file attributes.
+- **Support for remote backups**: Works seamlessly with local and remote directories.
+- **Verbose mode**: Option to output detailed logs for troubleshooting.
 
-- **File synchronization**: Syncs a source directory to a destination directory using `rsync`.
-- **Version control**: Stores older versions of modified files in an `older_versions` directory within the destination.
-- **File renaming**: Renames older files by appending the modification date (added by `rsync`) and a 6-character MD5 hash.
-- **Unique file versions**: Ensures that older versions of the same file do not overwrite each other by including both the modification date and the MD5 hash.
-- **Cleanup**: Removes empty directories from `older_versions` after renaming.
-- **Verbose mode**: Displays renaming details if enabled.
+## Requirements
+- `rsync`: The script relies on `rsync` for file synchronization.
+- `uuidgen`: Used to generate unique identifiers for versioning.
+- **Optional**: `ssh` for remote backups.
+
+## Installation
+1. Clone the repository or download the script:
+   ```bash
+   git clone https://github.com/yourusername/sbackup.sh.git
+   ```
+2. Make the script executable:
+   ```bash
+   chmod +x sbackup.sh
+   ```
 
 ## Usage
 
+### Basic Syntax
 ```bash
 ./sbackup.sh [-v] <source_dir> <dest_dir>
 ```
 
-- `-v` (optional): Enables verbose mode, showing detailed output of renamed files.
-- `<source_dir>`: Directory to back up.
-- `<dest_dir>`: Directory where the files will be synchronized and older versions stored.
+- `source_dir`: The directory you want to back up.
+- `dest_dir`: The destination directory where the files will be copied. This can be a local or remote path.
+- `-v`: (Optional) Verbose mode for more detailed output.
 
-### Example
-
+### Example 1: Local Backup
+To back up `/home/user/documents` to `/mnt/backup`:
 ```bash
-./sbackup.sh -v /path/to/source /path/to/destination
+./sbackup.sh /home/user/documents /mnt/backup
 ```
 
-This will:
-
-1. Sync `/path/to/source` to `/path/to/destination`.
-2. Move older/modified files to the `older_versions` directory inside the destination.
-3. Append a timestamp to older file versions (done by `rsync`).
-4. Rename files in `older_versions` by appending a 6-character MD5 hash for uniqueness.
-5. Clean up empty directories in `older_versions`.
-
-## File Naming Convention
-
-The script generates filenames in the `older_versions` directory with the format:
-
-- For files **without extensions** (e.g., `.bashrc`):
-  
-  ```
-  filename-YYYYMMDD-HHMMSS-MD5hash
-  ```
-
-- For files **with extensions** (e.g., `example.txt`):
-  
-  ```
-  filename.ext-YYYYMMDD-HHMMSS-MD5hash
-  ```
-
-Here’s how it works:
-
-- **`YYYYMMDD-HHMMSS`**: Date and time of the file version, appended by `rsync`.
-- **`MD5hash`**: A 6-character truncated MD5 hash for uniqueness, appended by the script.
-
-This naming scheme ensures that even if multiple versions of the same file exist, each version remains unique.
-
-## Requirements
-
-- **`rsync`** must be installed on your system.
-- **`md5sum`** is used to generate the hash for file uniqueness.
-
-## Script Breakdown
-
-- **`get_md5_hash`**: Extracts the first 6 characters of the MD5 hash of a file.
-- **`rsync`**: Synchronizes the source and destination directories. It moves modified files to `older_versions` with a timestamp (`YYYYMMDD-HHMMSS`) appended.
-- **File renaming**: After `rsync` completes, the script further renames each older version in `older_versions` by adding a 6-character MD5 hash to avoid name collisions.
-  
-## Verbose Mode
-
-When running the script with the `-v` flag, the script will output information about each renamed file, showing both the original and new filenames.
-
-## Example Output
-
+### Example 2: Remote Backup
+To back up `/home/user/documents` to a remote machine:
 ```bash
-Running rsync...
-Renaming files in /path/to/destination/older_versions...
-Renamed file.txt-20230922-102030 to file.txt-20230922-102030-1a2b3c
-Renamed .bashrc-20230922-102030 to .bashrc-20230922-102030-4d5e6f
-Cleaning up empty directories in /path/to/destination/older_versions...
-Synchronization and renaming complete.
+./sbackup.sh /home/user/documents user@remote:/path/to/backup
 ```
 
-## Error Handling
+### Example 3: Verbose Mode
+Enable verbose mode for more detailed output:
+```bash
+./sbackup.sh -v /home/user/documents /mnt/backup
+```
 
-- The script exits with an error if the source or destination directories are not provided.
-- It ensures that the source, destination, and `older_versions` directories exist before proceeding.
+## How It Works
+
+1. **Rsync synchronization**: The script uses `rsync` to synchronize the source directory to the destination directory. Only modified files are copied, optimizing bandwidth and storage.
+2. **Versioning**: If a file already exists in the destination, `rsync` moves the older version to an `older_versions` folder inside the destination. The older version is renamed by appending:
+   - A `~YYYY-MM-DD` timestamp representing the date of the sync.
+   - A unique 8-character ID generated by `uuidgen`.
+   
+   This ensures that each older version is unique, even if the same file is backed up multiple times a day.
+
+### Example of Versioned Filename:
+If the original file is `example.txt`, and it is moved to the `older_versions` folder, the new file might look like:
+```
+example.txt~2024-10-01-abcdef12
+```
 
 ## License
+This project is licensed under the MIT License.
 
-This script is released under the MIT License. Feel free to use, modify, and distribute it as needed.
+---
+
+Feel free to modify the script to suit your needs. Contributions and improvements are welcome!
